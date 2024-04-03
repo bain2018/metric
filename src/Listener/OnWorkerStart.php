@@ -101,6 +101,8 @@ class OnWorkerStart implements ListenerInterface
             'abort_count',
             'idle_worker_num',
             'coroutine_num',
+            'accept_count',
+            'close_count',
             'worker_request_count',
             'worker_dispatch_count',
             'memory_usage',
@@ -138,6 +140,8 @@ class OnWorkerStart implements ListenerInterface
             $metrics['worker_dispatch_count']->set($serverStats['worker_dispatch_count']);
             $metrics['connection_num']->set($serverStats['connection_num']);
             $metrics['abort_count']->set($serverStats['abort_count']);
+            $metrics['accept_count']->set($serverStats['accept_count']);
+            $metrics['close_count']->set($serverStats['close_count']);
             $metrics['idle_worker_num']->set($serverStats['idle_worker_num']);
             $metrics['coroutine_num']->set($serverStats['coroutine_num']);
             $metrics['memory_usage']->set(memory_get_usage());
