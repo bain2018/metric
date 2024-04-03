@@ -15,6 +15,7 @@ use Hyperf\Coroutine\Coroutine;
 use Hyperf\Event\Contract\ListenerInterface;
 use Hyperf\Pool\SimplePool\PoolFactory;
 use Hyperf\Logger\LoggerFactory;
+use Hyperf\Contract\ConfigInterface;
 
 class SimplePoolWatcher extends PoolWatcher implements ListenerInterface
 {

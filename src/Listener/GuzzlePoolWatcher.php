@@ -15,6 +15,7 @@ use Hyperf\Logger\LoggerFactory;
 use Hyperf\Coordinator\Constants;
 use Hyperf\Coordinator\CoordinatorManager;
 use Hyperf\Coroutine\Coroutine;
+use Hyperf\Contract\ConfigInterface;
 
 class GuzzlePoolWatcher extends PoolWatcher implements ListenerInterface
 {
