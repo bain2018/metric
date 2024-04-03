@@ -63,7 +63,7 @@ class OnBeforeProcessHandle implements ListenerInterface
             return;
         }
 
-        if (! $this->config->get('metric.enable_command_metric', true)) {
+        if (! $this->config->get('metric.enable_process_metric', true)) {
             return;
         }
 
