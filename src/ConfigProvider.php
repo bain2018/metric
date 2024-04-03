@@ -21,6 +21,7 @@ use Hyperf\Metric\Contract\MetricCollectorInterface;
 use Hyperf\Metric\Contract\MetricFactoryInterface;
 use Hyperf\Metric\Listener\MetricBufferWatcher;
 use Hyperf\Metric\Listener\OnBeforeHandle;
+use Hyperf\Metric\Listener\OnBeforeProcessHandle;
 use Hyperf\Metric\Listener\OnCoroutineServerStart;
 use Hyperf\Metric\Listener\OnMetricFactoryReady;
 use Hyperf\Metric\Listener\OnPipeMessage;
@@ -57,6 +58,7 @@ class ConfigProvider
             ],
             'listeners' => [
                 OnPipeMessage::class,
+                OnBeforeProcessHandle::class,
                 OnMetricFactoryReady::class,
                 OnBeforeHandle::class,
                 OnWorkerStart::class,

@@ -13,12 +13,17 @@ declare(strict_types=1);
 namespace Hyperf\Metric\Adapter\Prometheus;
 
 use Hyperf\Codec\Json;
+use Hyperf\Context\ApplicationContext;
+use Hyperf\Logger\Logger;
+use Hyperf\Logger\LoggerFactory;
 use Hyperf\Metric\Exception\InvalidArgumentException;
 use Prometheus\Counter;
 use Prometheus\Gauge;
 use Prometheus\Histogram;
+use Prometheus\Math;
 use Prometheus\MetricFamilySamples;
 use Prometheus\Storage\Adapter;
+use Prometheus\Summary;
 use RedisException;
 
 class Redis implements Adapter
@@ -27,135 +32,29 @@ class Redis implements Adapter
 
     private static string $prefix = 'prometheus:';
 
+    protected Logger $logger;
+
     /**
      * @param \Redis $redis
      */
     public function __construct(protected mixed $redis)
     {
+        $this->logger=ApplicationContext::getContainer()->get(LoggerFactory::class)->get("log");
+        $this->logger->info("Prometheus 调用自定义Redis");
     }
 
-    /**
-     * @return MetricFamilySamples[]
-     *
-     * @throws RedisException
-     */
-    public function collect(): array
-    {
-        $metrics = array_merge(
-            $this->collectHistograms(),
-            $this->collectGauges(),
-            $this->collectCounters(),
-        );
 
-        return array_map(
-            fn (array $metric) => new MetricFamilySamples($metric),
-            $metrics
-        );
+    public static function setPrefix(string $prefix): void
+    {
+        self::$prefix = $prefix;
     }
 
     /**
      * @throws RedisException
      */
-    public function updateHistogram(array $data): void
+    public function flushRedis(): void
     {
-        $metaData = $data;
-        unset($metaData['value'], $metaData['labelValues']);
-
-        $bucketToIncrease = '+Inf';
-        foreach ($data['buckets'] as $bucket) {
-            if ($data['value'] <= $bucket) {
-                $bucketToIncrease = $bucket;
-                break;
-            }
-        }
-
-        $this->redis->eval(
-            <<<'LUA'
-local result = redis.call('hIncrByFloat', KEYS[1], ARGV[1], ARGV[3])
-redis.call('hIncrBy', KEYS[1], ARGV[2], 1)
-if tonumber(result) >= tonumber(ARGV[3]) then
-    redis.call('hSet', KEYS[1], '__meta', ARGV[4])
-    redis.call('sAdd', KEYS[2], KEYS[1])
-end
-return result
-LUA
-            ,
-            [
-                $this->toMetricKey($data),
-                $this->getMetricGatherKey(Histogram::TYPE),
-                Json::encode(['b' => 'sum', 'labelValues' => $data['labelValues']]),
-                Json::encode(['b' => $bucketToIncrease, 'labelValues' => $data['labelValues']]),
-                $data['value'],
-                Json::encode($metaData),
-            ],
-            2
-        );
-    }
-
-    /**
-     * @throws RedisException
-     */
-    public function updateGauge(array $data): void
-    {
-        $metaData = $data;
-        unset($metaData['value'], $metaData['labelValues'], $metaData['command']);
-
-        $this->redis->eval(
-            <<<'LUA'
-local result = redis.call(ARGV[1], KEYS[1], ARGV[2], ARGV[3])
-if ARGV[1] == 'hSet' then
-    if result == 1 then
-        redis.call('hSet', KEYS[1], '__meta', ARGV[4])
-        redis.call('sAdd', KEYS[2], KEYS[1])
-    end
-else
-    if result == ARGV[3] then
-        redis.call('hSet', KEYS[1], '__meta', ARGV[4])
-        redis.call('sAdd', KEYS[2], KEYS[1])
-    end
-end
-LUA
-            ,
-            [
-                $this->toMetricKey($data),
-                $this->getMetricGatherKey(Gauge::TYPE),
-                $this->getRedisCommand($data['command']),
-                Json::encode($data['labelValues']),
-                $data['value'],
-                Json::encode($metaData),
-            ],
-            2
-        );
-    }
-
-    /**
-     * @throws RedisException
-     */
-    public function updateCounter(array $data): void
-    {
-        $metaData = $data;
-        unset($metaData['value'], $metaData['labelValues'], $metaData['command']);
-
-        $this->redis->eval(
-            <<<'LUA'
-local result = redis.call(ARGV[1], KEYS[1], ARGV[3], ARGV[2])
-local added = redis.call('sAdd', KEYS[2], KEYS[1])
-if added == 1 then
-    redis.call('hMSet', KEYS[1], '__meta', ARGV[4])
-end
-return result
-LUA
-            ,
-            [
-                $this->toMetricKey($data),
-                $this->getMetricGatherKey(Counter::TYPE),
-                $this->getRedisCommand($data['command']),
-                $data['value'],
-                Json::encode($data['labelValues']),
-                Json::encode($metaData),
-            ],
-            2
-        );
+        $this->wipeStorage();
     }
 
     /**
@@ -183,6 +82,7 @@ repeat
         redis.call('DEL', key)
     end
 until cursor == "0"
+return 1
 LUA
             ,
             [$searchPattern],
@@ -190,27 +90,235 @@ LUA
         );
     }
 
+    private function metaKey(array $data): string
+    {
+        return implode(':', [
+            $data['name'],
+            'meta'
+        ]);
+    }
+
+    private function valueKey(array $data): string
+    {
+        return implode(':', [
+            $data['name'],
+            $this->encodeLabelValues($data['labelValues']),
+            'value'
+        ]);
+    }
+
+    /**
+     * @return MetricFamilySamples[]
+     *
+     * @throws RedisException
+     */
+    public function collect(bool $sortMetrics = true): array
+    {
+
+        $metrics = $this->collectHistograms();
+        $metrics = array_merge($metrics, $this->collectGauges($sortMetrics));
+        $metrics = array_merge($metrics, $this->collectCounters($sortMetrics));
+        $metrics = array_merge($metrics, $this->collectSummaries());
+
+        return array_map(
+            fn (array $metric) => new MetricFamilySamples($metric),
+            $metrics
+        );
+
+    }
+
     /**
      * @throws RedisException
      */
-    public function flushRedis(): void
+    public function updateHistogram(array $data): void
     {
-        $this->wipeStorage();
+        $metaData = $data;
+        unset($metaData['value'], $metaData['labelValues']);
+
+        $bucketToIncrease = '+Inf';
+        foreach ($data['buckets'] as $bucket) {
+            if ($data['value'] <= $bucket) {
+                $bucketToIncrease = $bucket;
+                break;
+            }
+        }
+
+        $res=$this->redis->eval(
+            <<<LUA
+local result = redis.call('hIncrByFloat', KEYS[1], ARGV[1], ARGV[3])
+redis.call('hIncrBy', KEYS[1], ARGV[2], 1)
+if tonumber(result) >= tonumber(ARGV[3]) then
+    redis.call('hSet', KEYS[1], '__meta', ARGV[4])
+    redis.call('sAdd', KEYS[2], KEYS[1])
+end
+return result
+LUA
+            ,
+            [
+                $this->toMetricKey($data),
+                $this->getMetricGatherKey(Histogram::TYPE),
+                Json::encode(['b' => 'sum', 'labelValues' => $data['labelValues']]),
+                Json::encode(['b' => $bucketToIncrease, 'labelValues' => $data['labelValues']]),
+                $data['value'],
+                Json::encode($metaData),
+            ],
+            2
+        );
+
     }
 
-    public static function fromExistingConnection(mixed $redis): self
+
+    public function updateSummary(array $data): void
     {
-        return new self($redis);
+        // store meta
+        $summaryKey=$this->getMetricGatherKey(Summary::TYPE);
+        $metaKey = $summaryKey . ':' . $this->metaKey($data);
+        $json = json_encode($this->metaData($data));
+        if (false === $json) {
+            throw new \RuntimeException(json_last_error_msg());
+        }
+        $this->redis->setNx($metaKey, $json);  /** @phpstan-ignore-line */
+
+        // store value key
+        $valueKey = $summaryKey . ':' . $this->valueKey($data);
+        $json = json_encode($this->encodeLabelValues($data['labelValues']));
+        if (false === $json) {
+            throw new \RuntimeException(json_last_error_msg());
+        }
+        $this->redis->setNx($valueKey, $json); /** @phpstan-ignore-line */
+
+        // trick to handle uniqid collision
+        $done = false;
+        while (!$done) {
+            $sampleKey = $valueKey . ':' . uniqid('', true);
+            $done = $this->redis->set($sampleKey, $data['value'], ['NX', 'EX' => $data['maxAgeSeconds']]);
+        }
     }
 
-    public static function setPrefix(string $prefix): void
+    /**
+     * @throws RedisException
+     */
+    public function updateGauge(array $data): void
     {
-        self::$prefix = $prefix;
+        $metaData = $data;
+        unset($metaData['value'], $metaData['labelValues'], $metaData['command']);
+
+        $cmd=$this->getRedisCommand($data['command']);
+        $script="";
+        if ($cmd=='hSet')
+        {
+            $script= <<<LUA
+local result = redis.call('hSet', KEYS[1], ARGV[2], ARGV[3])
+if result == 1 then
+   redis.call('hSet', KEYS[1], '__meta', ARGV[4])
+   redis.call('sAdd', KEYS[2], KEYS[1])
+end
+return result
+LUA;
+        }
+
+        if ($cmd=='hIncrBy')
+        {
+            $script=<<<LUA
+local result = redis.call('hIncrBy', KEYS[1], ARGV[2], ARGV[3])
+if result == ARGV[3] then
+   redis.call('hSet', KEYS[1], '__meta', ARGV[4])
+   redis.call('sAdd', KEYS[2], KEYS[1])
+end
+return result
+LUA;
+        }
+
+        if ($cmd=='hIncrByFloat')
+        {
+            $script=<<<LUA
+local result = redis.call('hIncrByFloat', KEYS[1], ARGV[2], ARGV[3])
+if result == ARGV[3] then
+   redis.call('hSet', KEYS[1], '__meta', ARGV[4])
+   redis.call('sAdd', KEYS[2], KEYS[1])
+end
+return result
+LUA;
+        }
+
+        $res=$this->redis->eval($script,
+            [
+                $this->toMetricKey($data),
+                $this->getMetricGatherKey(Gauge::TYPE),
+                $this->getRedisCommand($data['command']),
+                Json::encode($data['labelValues']),
+                $data['value'],
+                Json::encode($metaData),
+            ],
+            2
+        );
     }
 
-    public static function setMetricGatherKeySuffix(string $suffix): void
+    /**
+     * @throws RedisException
+     */
+    public function updateCounter(array $data): void
     {
-        self::$metricGatherKeySuffix = $suffix;
+        $metaData = $data;
+        unset($metaData['value'], $metaData['labelValues'], $metaData['command']);
+
+        $cmd=$this->getRedisCommand($data['command']);
+        $script="";
+        if ($cmd=='hSet')
+        {
+            $script= <<<LUA
+local result = redis.call('hSet', KEYS[1], ARGV[3], ARGV[2])
+local added = redis.call('sAdd', KEYS[2], KEYS[1])
+if added == 1 then
+    redis.call('hMSet', KEYS[1], '__meta', ARGV[4])
+end
+return result
+LUA;
+        }
+
+        if ($cmd=='hIncrBy')
+        {
+            $script= <<<LUA
+local result = redis.call('hIncrBy', KEYS[1], ARGV[3], ARGV[2])
+local added = redis.call('sAdd', KEYS[2], KEYS[1])
+if added == 1 then
+    redis.call('hMSet', KEYS[1], '__meta', ARGV[4])
+end
+return result
+LUA;
+        }
+
+        if ($cmd=='hIncrByFloat')
+        {
+            $script= <<<LUA
+local result = redis.call('hIncrByFloat', KEYS[1], ARGV[3], ARGV[2])
+local added = redis.call('sAdd', KEYS[2], KEYS[1])
+if added == 1 then
+    redis.call('hMSet', KEYS[1], '__meta', ARGV[4])
+end
+return result
+LUA;
+        }
+
+        $res=$this->redis->eval($script,
+            [
+                $this->toMetricKey($data),
+                $this->getMetricGatherKey(Counter::TYPE),
+                $this->getRedisCommand($data['command']),
+                $data['value'],
+                Json::encode($data['labelValues']),
+                Json::encode($metaData),
+            ],
+            2
+        );
+    }
+
+
+    private function metaData(array $data): array
+    {
+        $metricsMetaData = $data;
+        unset($metricsMetaData['value'], $metricsMetaData['command'], $metricsMetaData['labelValues']);
+        return $metricsMetaData;
     }
 
     /**
@@ -220,29 +328,31 @@ LUA
     {
         $keys = $this->redis->sMembers($this->getMetricGatherKey(Histogram::TYPE));
         sort($keys);
-
+        $histograms = [];
         foreach ($keys as $key) {
             $raw = $this->redis->hGetAll(str_replace($this->redis->_prefix(''), '', $key));
-
-            $histogram = array_merge(Json::decode($raw['__meta'] ?? '{}'), ['samples' => []]);
-
+            if (!isset($raw['__meta'])) {
+                continue;
+            }
+            $histogram = json_decode($raw['__meta'], true);
             unset($raw['__meta']);
-            // Add the Inf bucket, so we can compute it later on
+            $histogram['samples'] = [];
+
+            // Add the Inf bucket so we can compute it later on
             $histogram['buckets'][] = '+Inf';
+
             $allLabelValues = [];
-
             foreach (array_keys($raw) as $k) {
-                $d = Json::decode($k);
-
-                if (($d['b'] ?? '') == 'sum' || count($d['labelValues'] ?? []) !== count($histogram['labelNames'] ?? [])) {
+                $d = json_decode($k, true);
+                if ($d['b'] == 'sum') {
                     continue;
                 }
-
-                $allLabelValues[] = $d['labelValues'] ?? [];
+                $allLabelValues[] = $d['labelValues'];
             }
+
             // We need set semantics.
             // This is the equivalent of array_unique but for arrays of arrays.
-            $allLabelValues = array_map('unserialize', array_unique(array_map('serialize', $allLabelValues)));
+            $allLabelValues = array_map("unserialize", array_unique(array_map("serialize", $allLabelValues)));
             sort($allLabelValues);
 
             foreach ($allLabelValues as $labelValues) {
@@ -251,18 +361,25 @@ LUA
                 // the previous one.
                 $acc = 0;
                 foreach ($histogram['buckets'] as $bucket) {
-                    $bucketKey = Json::encode(['b' => $bucket, 'labelValues' => $labelValues]);
-                    if (isset($raw[$bucketKey])) {
+                    $bucketKey = json_encode(['b' => $bucket, 'labelValues' => $labelValues]);
+                    if (!isset($raw[$bucketKey])) {
+                        $histogram['samples'][] = [
+                            'name' => $histogram['name'] . '_bucket',
+                            'labelNames' => ['le'],
+                            'labelValues' => array_merge($labelValues, [$bucket]),
+                            'value' => $acc,
+                        ];
+                    } else {
                         $acc += $raw[$bucketKey];
+                        $histogram['samples'][] = [
+                            'name' => $histogram['name'] . '_bucket',
+                            'labelNames' => ['le'],
+                            'labelValues' => array_merge($labelValues, [$bucket]),
+                            'value' => $acc,
+                        ];
                     }
-
-                    $histogram['samples'][] = [
-                        'name' => $histogram['name'] . '_bucket',
-                        'labelNames' => ['le'],
-                        'labelValues' => array_merge($labelValues, [$bucket]),
-                        'value' => $acc,
-                    ];
                 }
+
                 // Add the count
                 $histogram['samples'][] = [
                     'name' => $histogram['name'] . '_count',
@@ -270,72 +387,205 @@ LUA
                     'labelValues' => $labelValues,
                     'value' => $acc,
                 ];
+
                 // Add the sum
                 $histogram['samples'][] = [
                     'name' => $histogram['name'] . '_sum',
                     'labelNames' => [],
                     'labelValues' => $labelValues,
-                    'value' => $raw[Json::encode(['b' => 'sum', 'labelValues' => $labelValues])],
+                    'value' => $raw[json_encode(['b' => 'sum', 'labelValues' => $labelValues])],
                 ];
             }
-
             $histograms[] = $histogram;
         }
-
-        return $histograms ?? [];
+        return $histograms;
     }
 
     /**
+     * @param string $key
+     *
+     * @return string
      * @throws RedisException
      */
-    protected function collectGauges(): array
+    private function removePrefixFromKey(string $key): string
     {
-        return $this->collectSamples(Gauge::TYPE);
+        // @phpstan-ignore-next-line false positive, phpstan thinks getOptions returns int
+        if ($this->redis->getOption(\Redis::OPT_PREFIX) === null) {
+            return $key;
+        }
+        // @phpstan-ignore-next-line false positive, phpstan thinks getOptions returns int
+        return substr($key, strlen($this->redis->getOption(\Redis::OPT_PREFIX)));
     }
 
     /**
+     * @return array
      * @throws RedisException
      */
-    protected function collectCounters(): array
+    private function collectSummaries(): array
     {
-        return $this->collectSamples(Counter::TYPE);
-    }
+        $math = new Math();
+        $summaryKey =$this->getMetricGatherKey(Summary::TYPE);
+        $keys = $this->redis->keys($summaryKey . ':*:meta');
+        $summaries = [];
+        foreach ($keys as $metaKeyWithPrefix) {
+            $metaKey = $this->removePrefixFromKey($metaKeyWithPrefix);
+            $rawSummary = $this->redis->get($metaKey);
+            if ($rawSummary === false) {
+                continue;
+            }
+            $summary = json_decode($rawSummary, true);
+            $metaData = $summary;
+            $data = [
+                'name' => $metaData['name'],
+                'help' => $metaData['help'],
+                'type' => $metaData['type'],
+                'labelNames' => $metaData['labelNames'],
+                'maxAgeSeconds' => $metaData['maxAgeSeconds'],
+                'quantiles' => $metaData['quantiles'],
+                'samples' => [],
+            ];
 
-    /**
-     * @throws RedisException
-     */
-    protected function collectSamples(string $metricType): array
-    {
-        $keys = $this->redis->sMembers($this->getMetricGatherKey($metricType));
+            $values = $this->redis->keys($summaryKey . ':' . $metaData['name'] . ':*:value');
+            foreach ($values as $valueKeyWithPrefix) {
+                $valueKey = $this->removePrefixFromKey($valueKeyWithPrefix);
+                $rawValue = $this->redis->get($valueKey);
+                if ($rawValue === false) {
+                    continue;
+                }
+                $value = json_decode($rawValue, true);
+                $encodedLabelValues = $value;
+                $decodedLabelValues = $this->decodeLabelValues($encodedLabelValues);
 
-        sort($keys);
+                $samples = [];
+                $sampleValues = $this->redis->keys($summaryKey . ':' . $metaData['name'] . ':' . $encodedLabelValues . ':value:*');
+                foreach ($sampleValues as $sampleValueWithPrefix) {
+                    $sampleValue = $this->removePrefixFromKey($sampleValueWithPrefix);
+                    $samples[] = (float) $this->redis->get($sampleValue);
+                }
 
-        foreach ($keys as $key) {
-            $raw = $this->redis->hGetAll(str_replace($this->redis->_prefix(''), '', $key));
-
-            $sample = array_merge(Json::decode($raw['__meta'] ?? '{}'), ['samples' => []]);
-
-            unset($raw['__meta']);
-
-            foreach ($raw as $k => $value) {
-                if (count($sample['labelNames'] ?? []) !== count(json_decode($k, true))) {
+                if (count($samples) === 0) {
+                    $this->redis->del($valueKey);
                     continue;
                 }
 
-                $sample['samples'][] = [
-                    'name' => $sample['name'],
+                // Compute quantiles
+                sort($samples);
+                foreach ($data['quantiles'] as $quantile) {
+                    $data['samples'][] = [
+                        'name' => $metaData['name'],
+                        'labelNames' => ['quantile'],
+                        'labelValues' => array_merge($decodedLabelValues, [$quantile]),
+                        'value' => $math->quantile($samples, $quantile),
+                    ];
+                }
+
+                // Add the count
+                $data['samples'][] = [
+                    'name' => $metaData['name'] . '_count',
                     'labelNames' => [],
-                    'labelValues' => Json::decode($k),
+                    'labelValues' => $decodedLabelValues,
+                    'value' => count($samples),
+                ];
+
+                // Add the sum
+                $data['samples'][] = [
+                    'name' => $metaData['name'] . '_sum',
+                    'labelNames' => [],
+                    'labelValues' => $decodedLabelValues,
+                    'value' => array_sum($samples),
+                ];
+            }
+
+            if (count($data['samples']) > 0) {
+                $summaries[] = $data;
+            } else {
+                $this->redis->del($metaKey);
+            }
+        }
+        return $summaries;
+    }
+
+    /**
+     * @throws RedisException
+     */
+    protected function collectGauges(bool $sortMetrics = true): array
+    {
+        $keys = $this->redis->sMembers($this->getMetricGatherKey(Gauge::TYPE));
+        sort($keys);
+        $gauges = [];
+        foreach ($keys as $key) {
+            $raw = $this->redis->hGetAll(str_replace($this->redis->_prefix(''), '', $key));
+            if (!isset($raw['__meta'])) {
+                continue;
+            }
+            $gauge = json_decode($raw['__meta'], true);
+            unset($raw['__meta']);
+            $gauge['samples'] = [];
+            foreach ($raw as $k => $value) {
+                $gauge['samples'][] = [
+                    'name' => $gauge['name'],
+                    'labelNames' => [],
+                    'labelValues' => json_decode($k, true),
                     'value' => $value,
                 ];
             }
 
-            usort($sample['samples'], fn ($a, $b) => strcmp(implode('', $a['labelValues']), implode('', $b['labelValues'])));
+            if ($sortMetrics) {
+                usort($gauge['samples'], function ($a, $b): int {
+                    return strcmp(implode("", $a['labelValues']), implode("", $b['labelValues']));
+                });
+            }
 
-            $samples[] = $sample;
+            $gauges[] = $gauge;
         }
+        return $gauges;
+    }
 
-        return $samples ?? [];
+    /**
+     * @throws RedisException
+     * Counter::TYPE
+     */
+    protected function collectCounters(bool $sortMetrics = true): array
+    {
+        $keys = $this->redis->sMembers($this->getMetricGatherKey(Counter::TYPE));
+        sort($keys);
+        $counters = [];
+        foreach ($keys as $key) {
+            $raw = $this->redis->hGetAll(str_replace($this->redis->_prefix(''), '', $key));
+            if (!isset($raw['__meta'])) {
+                continue;
+            }
+            $counter = json_decode($raw['__meta'], true);
+            unset($raw['__meta']);
+            $counter['samples'] = [];
+            foreach ($raw as $k => $value) {
+                $counter['samples'][] = [
+                    'name' => $counter['name'],
+                    'labelNames' => [],
+                    'labelValues' => json_decode($k, true),
+                    'value' => $value,
+                ];
+            }
+
+            if ($sortMetrics) {
+                usort($counter['samples'], function ($a, $b): int {
+                    return strcmp(implode("", $a['labelValues']), implode("", $b['labelValues']));
+                });
+            }
+
+            $counters[] = $counter;
+        }
+        return $counters;
+    }
+
+    protected function getRedisCommand(int $cmd): string
+    {
+        return match ($cmd) {
+            Adapter::COMMAND_INCREMENT_INTEGER => 'hIncrBy',
+            Adapter::COMMAND_INCREMENT_FLOAT => 'hIncrByFloat',
+            Adapter::COMMAND_SET => 'hSet',
+            default => throw new InvalidArgumentException('Unknown command'),
+        };
     }
 
     protected function toMetricKey(array $data): string
@@ -348,23 +598,59 @@ LUA
         return self::$prefix . $metricType . self::$metricGatherKeySuffix . $this->getRedisTag($metricType);
     }
 
+    /**
+     * @param mixed[] $values
+     * @return string
+     * @throws RuntimeException
+     */
+    private function encodeLabelValues(array $values): string
+    {
+        $json = json_encode($values);
+        if (false === $json) {
+            throw new RuntimeException(json_last_error_msg());
+        }
+        return base64_encode($json);
+    }
+
+    /**
+     * @param string $values
+     * @return mixed[]
+     * @throws RuntimeException
+     */
+    private function decodeLabelValues(string $values): array
+    {
+        $json = base64_decode($values, true);
+        if (false === $json) {
+            throw new RuntimeException('Cannot base64 decode label values');
+        }
+        $decodedValues = json_decode($json, true);
+        if (false === $decodedValues) {
+            throw new RuntimeException(json_last_error_msg());
+        }
+        return $decodedValues;
+    }
+
     protected function getRedisTag(string $metricType): string
     {
         return match ($metricType) {
             Counter::TYPE => '{counter}',
             Histogram::TYPE => '{histogram}',
             Gauge::TYPE => '{gauge}',
+            Summary::TYPE=>'{summary}',
             default => '',
         };
     }
 
-    protected function getRedisCommand(int $cmd): string
+    public static function fromExistingConnection(mixed $redis): self
     {
-        return match ($cmd) {
-            Adapter::COMMAND_INCREMENT_INTEGER => 'hIncrBy',
-            Adapter::COMMAND_INCREMENT_FLOAT => 'hIncrByFloat',
-            Adapter::COMMAND_SET => 'hSet',
-            default => throw new InvalidArgumentException('Unknown command'),
-        };
+        return new self($redis);
     }
+
+
+    public static function setMetricGatherKeySuffix(string $suffix): void
+    {
+        self::$metricGatherKeySuffix = $suffix;
+    }
+
 }
+
