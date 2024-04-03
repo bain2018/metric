@@ -97,6 +97,10 @@ class OnWorkerStart implements ListenerInterface
         // The following metrics MUST be collected in worker.
         $metrics = $this->factoryMetrics(
             ['worker' => (string) $workerId],
+            'connection_num',
+            'abort_count',
+            'idle_worker_num',
+            'coroutine_num',
             'worker_request_count',
             'worker_dispatch_count',
             'memory_usage',
@@ -132,7 +136,10 @@ class OnWorkerStart implements ListenerInterface
             $this->trySet('', $metrics, getrusage());
             $metrics['worker_request_count']->set($serverStats['worker_request_count']);
             $metrics['worker_dispatch_count']->set($serverStats['worker_dispatch_count']);
-
+            $metrics['connection_num']->set($serverStats['connection_num']);
+            $metrics['abort_count']->set($serverStats['abort_count']);
+            $metrics['idle_worker_num']->set($serverStats['idle_worker_num']);
+            $metrics['coroutine_num']->set($serverStats['coroutine_num']);
             $metrics['memory_usage']->set(memory_get_usage());
             $metrics['memory_peak_usage']->set(memory_get_peak_usage());
         });

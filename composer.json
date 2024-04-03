@@ -17,16 +17,22 @@
         "hyperf/contract": "~3.1.0",
         "hyperf/engine": "^2.3",
         "hyperf/event": "^3.1",
+        "hyperf/framework": "^3.1",
         "hyperf/guzzle": "~3.1.0",
         "hyperf/logger": "~3.1.0",
         "hyperf/pool": "^3.1",
         "hyperf/process": "~3.1.0",
+        "hyperf/server": "^3.1",
         "hyperf/support": "~3.1.0",
         "hyperf/utils": "~3.1.0",
         "promphp/prometheus_client_php": "^v2.10.0",
         "psr/container": "^1.0|^2.0",
         "psr/event-dispatcher": "^1.0",
         "psr/http-message": "^1.0|^2.0"
+    },
+    "require-dev": {
+        "hyperf/devtool": "~3.1.0",
+        "swoole/ide-helper": "^5.1.0"
     },
     "suggest": {
         "influxdb/influxdb-php": "Required to use InfluxDB driver.",
