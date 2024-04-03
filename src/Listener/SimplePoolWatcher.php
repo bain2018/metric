@@ -49,7 +49,7 @@ class SimplePoolWatcher extends PoolWatcher implements ListenerInterface
                  */
                 if (!in_array($poolName,$this->pools))
                 {
-                    $logger->info("SimplePoolWatcher==== 【{$poolName}】 ");
+                    $logger->info("Find A New SimplePoolWatcher==== 【{$poolName}】 ");
                     $this->pools[]=$poolName;
                     $workerId = (int) ($event->workerId ?? 0);
                     $pool = $this->container->get(PoolFactory::class)->getPool($poolName);

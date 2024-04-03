@@ -39,8 +39,7 @@ class Redis implements Adapter
      */
     public function __construct(protected mixed $redis)
     {
-        $this->logger=ApplicationContext::getContainer()->get(LoggerFactory::class)->get("log");
-        $this->logger->info("Prometheus 调用自定义Redis");
+
     }
 
 
@@ -615,17 +614,17 @@ LUA;
     /**
      * @param string $values
      * @return mixed[]
-     * @throws RuntimeException
+     * @throws \RuntimeException
      */
     private function decodeLabelValues(string $values): array
     {
         $json = base64_decode($values, true);
         if (false === $json) {
-            throw new RuntimeException('Cannot base64 decode label values');
+            throw new \RuntimeException('Cannot base64 decode label values');
         }
         $decodedValues = json_decode($json, true);
         if (false === $decodedValues) {
-            throw new RuntimeException(json_last_error_msg());
+            throw new \RuntimeException(json_last_error_msg());
         }
         return $decodedValues;
     }
