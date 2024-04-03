@@ -53,7 +53,6 @@ class OnBeforeProcessHandle implements ListenerInterface
     {
         return [
             BeforeProcessHandle::class,
-            AfterProcessHandle::class,
         ];
     }
 
@@ -73,7 +72,7 @@ class OnBeforeProcessHandle implements ListenerInterface
         if ($this->config->get('metric.use_standalone_process', true)) {
             if ($this->container->has(StdoutLoggerInterface::class)) {
                 $logger = $this->container->get(StdoutLoggerInterface::class);
-                $logger->warning('The use_standalone_process is set to true, but the command is not running in a server context. The current process is used instead.');
+                $logger->warning('The use_standalone_process is set to true, but the process is not running in a server context. The current process is used instead.');
             }
         }
 
