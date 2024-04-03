@@ -11,6 +11,7 @@ namespace Bain\Metric\Listener;
 
 use Hyperf\Event\Contract\ListenerInterface;
 use Hyperf\Pool\SimplePool\PoolFactory;
+use Hyperf\Logger\LoggerFactory;
 
 class GuzzlePoolWatcher extends PoolWatcher implements ListenerInterface
 {
@@ -25,6 +26,10 @@ class GuzzlePoolWatcher extends PoolWatcher implements ListenerInterface
     public function process(object $event): void
     {
         $poolNames=$this->container->get(PoolFactory::class)->getPoolNames();
+
+        $logger=$this->container->get(LoggerFactory::class)->get("log");
+        $logger->info("GuzzlePoolWatcher Pool 调用 ".json_encode($poolNames,JSON_UNESCAPED_UNICODE));
+
         foreach ($poolNames as $poolName) {
             if (!str_contains($poolName,'guzzle.handler'))
             {
