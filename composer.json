@@ -1,5 +1,5 @@
 {
-    "name": "bain2018/metric",
+    "name": "bain2018/metrics",
     "license": "MIT",
     "keywords": [
         "php",
@@ -53,9 +53,6 @@
         "sort-packages": true
     },
     "extra": {
-        "branch-alias": {
-            "dev-master": "3.1-dev"
-        },
         "hyperf": {
             "config": "Bain\\Metric\\ConfigProvider"
         }
