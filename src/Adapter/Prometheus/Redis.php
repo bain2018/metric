@@ -10,13 +10,13 @@ declare(strict_types=1);
  * @license  https://github.com/hyperf/hyperf/blob/master/LICENSE
  */
 
-namespace Hyperf\Metric\Adapter\Prometheus;
+namespace Bain\Metric\Adapter\Prometheus;
 
 use Hyperf\Codec\Json;
 use Hyperf\Context\ApplicationContext;
 use Hyperf\Logger\Logger;
 use Hyperf\Logger\LoggerFactory;
-use Hyperf\Metric\Exception\InvalidArgumentException;
+use Bain\Metric\Exception\InvalidArgumentException;
 use Prometheus\Counter;
 use Prometheus\Gauge;
 use Prometheus\Histogram;

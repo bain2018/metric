@@ -10,12 +10,12 @@ declare(strict_types=1);
  * @license  https://github.com/hyperf/hyperf/blob/master/LICENSE
  */
 
-namespace Hyperf\Metric\Process;
+namespace Bain\Metric\Process;
 
 use Hyperf\Contract\ConfigInterface;
-use Hyperf\Metric\Contract\MetricFactoryInterface;
-use Hyperf\Metric\Event\MetricFactoryReady;
-use Hyperf\Metric\MetricFactoryPicker;
+use Bain\Metric\Contract\MetricFactoryInterface;
+use Bain\Metric\Event\MetricFactoryReady;
+use Bain\Metric\MetricFactoryPicker;
 use Hyperf\Process\AbstractProcess;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\NotFoundExceptionInterface;

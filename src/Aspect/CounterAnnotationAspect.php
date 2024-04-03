@@ -10,13 +10,13 @@ declare(strict_types=1);
  * @license  https://github.com/hyperf/hyperf/blob/master/LICENSE
  */
 
-namespace Hyperf\Metric\Aspect;
+namespace Bain\Metric\Aspect;
 
 use Hyperf\Di\Aop\AbstractAspect;
 use Hyperf\Di\Aop\ProceedingJoinPoint;
 use Hyperf\Di\Exception\Exception;
-use Hyperf\Metric\Annotation\Counter;
-use Hyperf\Metric\Contract\MetricFactoryInterface;
+use Bain\Metric\Annotation\Counter;
+use Bain\Metric\Contract\MetricFactoryInterface;
 
 class CounterAnnotationAspect extends AbstractAspect
 {

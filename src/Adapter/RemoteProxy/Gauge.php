@@ -10,11 +10,11 @@ declare(strict_types=1);
  * @license  https://github.com/hyperf/hyperf/blob/master/LICENSE
  */
 
-namespace Hyperf\Metric\Adapter\RemoteProxy;
+namespace Bain\Metric\Adapter\RemoteProxy;
 
 use Hyperf\Context\ApplicationContext;
-use Hyperf\Metric\Contract\GaugeInterface;
-use Hyperf\Metric\Contract\MetricCollectorInterface;
+use Bain\Metric\Contract\GaugeInterface;
+use Bain\Metric\Contract\MetricCollectorInterface;
 
 class Gauge implements GaugeInterface
 {

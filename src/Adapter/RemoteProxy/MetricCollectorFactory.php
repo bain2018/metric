@@ -10,10 +10,10 @@ declare(strict_types=1);
  * @license  https://github.com/hyperf/hyperf/blob/master/LICENSE
  */
 
-namespace Hyperf\Metric\Adapter\RemoteProxy;
+namespace Bain\Metric\Adapter\RemoteProxy;
 
 use Hyperf\Contract\ConfigInterface;
-use Hyperf\Metric\Contract\MetricCollectorInterface;
+use Bain\Metric\Contract\MetricCollectorInterface;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Container\NotFoundExceptionInterface;

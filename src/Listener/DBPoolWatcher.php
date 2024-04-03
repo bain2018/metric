@@ -10,7 +10,7 @@ declare(strict_types=1);
  * @license  https://github.com/hyperf/hyperf/blob/master/LICENSE
  */
 
-namespace Hyperf\Metric\Listener;
+namespace Bain\Metric\Listener;
 
 use Hyperf\Contract\ConfigInterface;
 use Hyperf\DbConnection\Pool\PoolFactory;

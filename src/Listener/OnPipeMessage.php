@@ -10,14 +10,14 @@ declare(strict_types=1);
  * @license  https://github.com/hyperf/hyperf/blob/master/LICENSE
  */
 
-namespace Hyperf\Metric\Listener;
+namespace Bain\Metric\Listener;
 
 use Hyperf\Coroutine\Coroutine;
 use Hyperf\Event\Contract\ListenerInterface;
-use Hyperf\Metric\Adapter\RemoteProxy\Counter;
-use Hyperf\Metric\Adapter\RemoteProxy\Gauge;
-use Hyperf\Metric\Adapter\RemoteProxy\Histogram;
-use Hyperf\Metric\Contract\MetricFactoryInterface;
+use Bain\Metric\Adapter\RemoteProxy\Counter;
+use Bain\Metric\Adapter\RemoteProxy\Gauge;
+use Bain\Metric\Adapter\RemoteProxy\Histogram;
+use Bain\Metric\Contract\MetricFactoryInterface;
 use Hyperf\Process\Event\PipeMessage;
 use Psr\Container\ContainerInterface;
 

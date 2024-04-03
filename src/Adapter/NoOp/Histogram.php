@@ -10,9 +10,9 @@ declare(strict_types=1);
  * @license  https://github.com/hyperf/hyperf/blob/master/LICENSE
  */
 
-namespace Hyperf\Metric\Adapter\NoOp;
+namespace Bain\Metric\Adapter\NoOp;
 
-use Hyperf\Metric\Contract\HistogramInterface;
+use Bain\Metric\Contract\HistogramInterface;
 
 class Histogram implements HistogramInterface
 {

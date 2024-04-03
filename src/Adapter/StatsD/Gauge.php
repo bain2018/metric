@@ -10,10 +10,10 @@ declare(strict_types=1);
  * @license  https://github.com/hyperf/hyperf/blob/master/LICENSE
  */
 
-namespace Hyperf\Metric\Adapter\StatsD;
+namespace Bain\Metric\Adapter\StatsD;
 
 use Domnikl\Statsd\Client;
-use Hyperf\Metric\Contract\GaugeInterface;
+use Bain\Metric\Contract\GaugeInterface;
 
 class Gauge implements GaugeInterface
 {

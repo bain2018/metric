@@ -10,7 +10,7 @@ declare(strict_types=1);
  * @license  https://github.com/hyperf/hyperf/blob/master/LICENSE
  */
 
-namespace Hyperf\Metric\Contract;
+namespace Bain\Metric\Contract;
 
 /**
  * Gauge describes a metric that takes specific values over time.

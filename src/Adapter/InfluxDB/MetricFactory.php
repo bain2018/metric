@@ -10,19 +10,19 @@ declare(strict_types=1);
  * @license  https://github.com/hyperf/hyperf/blob/master/LICENSE
  */
 
-namespace Hyperf\Metric\Adapter\InfluxDB;
+namespace Bain\Metric\Adapter\InfluxDB;
 
 use Hyperf\Contract\ConfigInterface;
 use Hyperf\Coordinator\Constants;
 use Hyperf\Coordinator\CoordinatorManager;
 use Hyperf\Guzzle\ClientFactory as GuzzleClientFactory;
-use Hyperf\Metric\Adapter\Prometheus\Counter;
-use Hyperf\Metric\Adapter\Prometheus\Gauge;
-use Hyperf\Metric\Adapter\Prometheus\Histogram;
-use Hyperf\Metric\Contract\CounterInterface;
-use Hyperf\Metric\Contract\GaugeInterface;
-use Hyperf\Metric\Contract\HistogramInterface;
-use Hyperf\Metric\Contract\MetricFactoryInterface;
+use Bain\Metric\Adapter\Prometheus\Counter;
+use Bain\Metric\Adapter\Prometheus\Gauge;
+use Bain\Metric\Adapter\Prometheus\Histogram;
+use Bain\Metric\Contract\CounterInterface;
+use Bain\Metric\Contract\GaugeInterface;
+use Bain\Metric\Contract\HistogramInterface;
+use Bain\Metric\Contract\MetricFactoryInterface;
 use Hyperf\Stringable\StrCache;
 use InfluxDB\Client;
 use InfluxDB\Database;

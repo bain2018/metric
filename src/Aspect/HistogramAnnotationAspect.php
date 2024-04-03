@@ -10,13 +10,13 @@ declare(strict_types=1);
  * @license  https://github.com/hyperf/hyperf/blob/master/LICENSE
  */
 
-namespace Hyperf\Metric\Aspect;
+namespace Bain\Metric\Aspect;
 
 use Hyperf\Di\Aop\AbstractAspect;
 use Hyperf\Di\Aop\ProceedingJoinPoint;
 use Hyperf\Di\Exception\Exception;
-use Hyperf\Metric\Annotation\Histogram;
-use Hyperf\Metric\Timer;
+use Bain\Metric\Annotation\Histogram;
+use Bain\Metric\Timer;
 
 class HistogramAnnotationAspect extends AbstractAspect
 {

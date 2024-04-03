@@ -10,10 +10,10 @@ declare(strict_types=1);
  * @license  https://github.com/hyperf/hyperf/blob/master/LICENSE
  */
 
-namespace Hyperf\Metric;
+namespace Bain\Metric;
 
 use Hyperf\Coroutine\Coroutine;
-use Hyperf\Metric\Contract\GaugeInterface;
+use Bain\Metric\Contract\GaugeInterface;
 use Hyperf\Retry\Retry;
 
 use function array_values;

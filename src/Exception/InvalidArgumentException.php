@@ -10,7 +10,7 @@ declare(strict_types=1);
  * @license  https://github.com/hyperf/hyperf/blob/master/LICENSE
  */
 
-namespace Hyperf\Metric\Exception;
+namespace Bain\Metric\Exception;
 
 class InvalidArgumentException extends \InvalidArgumentException
 {

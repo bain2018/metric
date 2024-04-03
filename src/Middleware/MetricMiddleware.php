@@ -10,12 +10,12 @@ declare(strict_types=1);
  * @license  https://github.com/hyperf/hyperf/blob/master/LICENSE
  */
 
-namespace Hyperf\Metric\Middleware;
+namespace Bain\Metric\Middleware;
 
 use Hyperf\HttpMessage\Exception\HttpException;
 use Hyperf\HttpServer\Router\Dispatched;
-use Hyperf\Metric\CoroutineServerStats;
-use Hyperf\Metric\Timer;
+use Bain\Metric\CoroutineServerStats;
+use Bain\Metric\Timer;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;

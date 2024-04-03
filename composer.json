@@ -38,12 +38,12 @@
     },
     "autoload": {
         "psr-4": {
-            "Hyperf\\Metric\\": "src/"
+            "Bain\\Metric\\": "src/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "HyperfTest\\Metric\\": "tests/"
+            "BainTest\\Metric\\": "tests/"
         }
     },
     "minimum-stability": "dev",
@@ -57,7 +57,7 @@
             "dev-master": "3.1-dev"
         },
         "hyperf": {
-            "config": "Hyperf\\Metric\\ConfigProvider"
+            "config": "Bain\\Metric\\ConfigProvider"
         }
     }
 }

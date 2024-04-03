@@ -10,7 +10,7 @@ declare(strict_types=1);
  * @license  https://github.com/hyperf/hyperf/blob/master/LICENSE
  */
 
-namespace Hyperf\Metric\Adapter\Prometheus;
+namespace Bain\Metric\Adapter\Prometheus;
 
 use GuzzleHttp\Exception\GuzzleException;
 use Hyperf\Contract\ConfigInterface;
@@ -23,13 +23,13 @@ use Hyperf\Engine\Http\Stream;
 use Hyperf\Engine\ResponseEmitter;
 use Hyperf\Guzzle\ClientFactory as GuzzleClientFactory;
 use Hyperf\HttpMessage\Server\Response as HyperfResponse;
-use Hyperf\Metric\Contract\CounterInterface;
-use Hyperf\Metric\Contract\GaugeInterface;
-use Hyperf\Metric\Contract\HistogramInterface;
-use Hyperf\Metric\Contract\MetricFactoryInterface;
-use Hyperf\Metric\Exception\InvalidArgumentException;
-use Hyperf\Metric\Exception\RuntimeException;
-use Hyperf\Metric\MetricFactoryPicker;
+use Bain\Metric\Contract\CounterInterface;
+use Bain\Metric\Contract\GaugeInterface;
+use Bain\Metric\Contract\HistogramInterface;
+use Bain\Metric\Contract\MetricFactoryInterface;
+use Bain\Metric\Exception\InvalidArgumentException;
+use Bain\Metric\Exception\RuntimeException;
+use Bain\Metric\MetricFactoryPicker;
 use Hyperf\Stringable\Str;
 use Hyperf\Stringable\StrCache;
 use Hyperf\Support\Network;

@@ -10,13 +10,13 @@ declare(strict_types=1);
  * @license  https://github.com/hyperf/hyperf/blob/master/LICENSE
  */
 
-namespace Hyperf\Metric\Adapter\RemoteProxy;
+namespace Bain\Metric\Adapter\RemoteProxy;
 
-use Hyperf\Metric\Contract\CounterInterface;
-use Hyperf\Metric\Contract\GaugeInterface;
-use Hyperf\Metric\Contract\HistogramInterface;
-use Hyperf\Metric\Contract\MetricFactoryInterface;
-use Hyperf\Metric\Exception\RuntimeException;
+use Bain\Metric\Contract\CounterInterface;
+use Bain\Metric\Contract\GaugeInterface;
+use Bain\Metric\Contract\HistogramInterface;
+use Bain\Metric\Contract\MetricFactoryInterface;
+use Bain\Metric\Exception\RuntimeException;
 
 class MetricFactory implements MetricFactoryInterface
 {

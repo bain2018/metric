@@ -7,7 +7,7 @@ declare(strict_types=1);
  * @comment :
  */
 
-namespace Hyperf\Metric\Listener;
+namespace Bain\Metric\Listener;
 
 use Hyperf\Event\Contract\ListenerInterface;
 use Hyperf\Pool\SimplePool\PoolFactory;

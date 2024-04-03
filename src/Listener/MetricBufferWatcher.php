@@ -10,7 +10,7 @@ declare(strict_types=1);
  * @license  https://github.com/hyperf/hyperf/blob/master/LICENSE
  */
 
-namespace Hyperf\Metric\Listener;
+namespace Bain\Metric\Listener;
 
 use Hyperf\Contract\ConfigInterface;
 use Hyperf\Coordinator\Constants;
@@ -19,7 +19,7 @@ use Hyperf\Coordinator\Timer;
 use Hyperf\Coroutine\Coroutine;
 use Hyperf\Event\Contract\ListenerInterface;
 use Hyperf\Framework\Event\BeforeWorkerStart;
-use Hyperf\Metric\Contract\MetricCollectorInterface;
+use Bain\Metric\Contract\MetricCollectorInterface;
 use Psr\Container\ContainerInterface;
 
 /**

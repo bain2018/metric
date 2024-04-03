@@ -10,23 +10,23 @@ declare(strict_types=1);
  * @license  https://github.com/hyperf/hyperf/blob/master/LICENSE
  */
 
-namespace Hyperf\Metric;
+namespace Bain\Metric;
 
 use Domnikl\Statsd\Connection;
 use Domnikl\Statsd\Connection\UdpSocket;
-use Hyperf\Metric\Adapter\RemoteProxy\MetricCollectorFactory;
-use Hyperf\Metric\Aspect\CounterAnnotationAspect;
-use Hyperf\Metric\Aspect\HistogramAnnotationAspect;
-use Hyperf\Metric\Contract\MetricCollectorInterface;
-use Hyperf\Metric\Contract\MetricFactoryInterface;
-use Hyperf\Metric\Listener\MetricBufferWatcher;
-use Hyperf\Metric\Listener\OnBeforeHandle;
-use Hyperf\Metric\Listener\OnBeforeProcessHandle;
-use Hyperf\Metric\Listener\OnCoroutineServerStart;
-use Hyperf\Metric\Listener\OnMetricFactoryReady;
-use Hyperf\Metric\Listener\OnPipeMessage;
-use Hyperf\Metric\Listener\OnWorkerStart;
-use Hyperf\Metric\Process\MetricProcess;
+use Bain\Metric\Adapter\RemoteProxy\MetricCollectorFactory;
+use Bain\Metric\Aspect\CounterAnnotationAspect;
+use Bain\Metric\Aspect\HistogramAnnotationAspect;
+use Bain\Metric\Contract\MetricCollectorInterface;
+use Bain\Metric\Contract\MetricFactoryInterface;
+use Bain\Metric\Listener\MetricBufferWatcher;
+use Bain\Metric\Listener\OnBeforeHandle;
+use Bain\Metric\Listener\OnBeforeProcessHandle;
+use Bain\Metric\Listener\OnCoroutineServerStart;
+use Bain\Metric\Listener\OnMetricFactoryReady;
+use Bain\Metric\Listener\OnPipeMessage;
+use Bain\Metric\Listener\OnWorkerStart;
+use Bain\Metric\Process\MetricProcess;
 use InfluxDB\Driver\DriverInterface;
 use InfluxDB\Driver\Guzzle;
 use Prometheus\Storage\Adapter;

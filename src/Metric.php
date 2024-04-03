@@ -10,9 +10,9 @@ declare(strict_types=1);
  * @license  https://github.com/hyperf/hyperf/blob/master/LICENSE
  */
 
-namespace Hyperf\Metric;
+namespace Bain\Metric;
 
-use Hyperf\Metric\Contract\MetricFactoryInterface;
+use Bain\Metric\Contract\MetricFactoryInterface;
 
 use function Hyperf\Support\make;
 

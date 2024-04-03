@@ -10,7 +10,7 @@ declare(strict_types=1);
  * @license  https://github.com/hyperf/hyperf/blob/master/LICENSE
  */
 
-namespace Hyperf\Metric\Annotation;
+namespace Bain\Metric\Annotation;
 
 use Attribute;
 use Hyperf\Di\Annotation\AbstractAnnotation;

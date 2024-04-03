@@ -10,9 +10,9 @@ declare(strict_types=1);
  * @license  https://github.com/hyperf/hyperf/blob/master/LICENSE
  */
 
-namespace Hyperf\Metric\Adapter\Prometheus;
+namespace Bain\Metric\Adapter\Prometheus;
 
-use Hyperf\Metric\Contract\GaugeInterface;
+use Bain\Metric\Contract\GaugeInterface;
 use Prometheus\CollectorRegistry;
 use Prometheus\Exception\MetricsRegistrationException;
 
