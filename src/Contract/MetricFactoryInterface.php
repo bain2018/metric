@@ -35,6 +35,24 @@ interface MetricFactoryInterface
      */
     public function makeHistogram(string $name, ?array $labelNames = []): HistogramInterface;
 
+
+    public function makeCounterWithNameSpace(string $name, ?array $labelNames = [],string $namespace=""): CounterInterface;
+
+    /**
+     * Create a Gauge.
+     * @param string $name name of the metric
+     * @param string[] $labelNames key of your label kvs
+     */
+    public function makeGaugeWithNameSpace(string $name, ?array $labelNames = [],string $namespace=""): GaugeInterface;
+
+    /**
+     * Create a HistogramInterface.
+     * @param string $name name of the metric
+     * @param string[] $labelNames key of your label kvs
+     */
+    public function makeHistogramWithNameSpace(string $name, ?array $labelNames = [],string $namespace=""): HistogramInterface;
+
+
     /**
      * Handle the metric collecting/reporting/serving tasks.
      */

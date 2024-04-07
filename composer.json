@@ -15,6 +15,7 @@
         "ext-redis": "*",
         "hyperf/codec": "~3.1.0",
         "hyperf/contract": "~3.1.0",
+        "hyperf/db-connection": "^3.1",
         "hyperf/engine": "^2.3",
         "hyperf/event": "^3.1",
         "hyperf/framework": "^3.1",

@@ -94,6 +94,65 @@ class MetricFactory implements MetricFactoryInterface
         );
     }
 
+
+    /**
+     * @throws MetricsRegistrationException
+     */
+    public function makeCounterWithNameSpace(string $name, ?array $labelNames = [],string $namespace=""): CounterInterface
+    {
+        if (empty($namespace))
+        {
+            $namespace=$this->config->get("metric.metric.{$this->name}.namespace");
+        }
+
+        return new Counter(
+            $this->registry,
+            $namespace,
+            $name,
+            'count ' . str_replace('_', ' ', $name),
+            $labelNames
+        );
+    }
+
+    /**
+     * @throws MetricsRegistrationException
+     */
+    public function makeGaugeWithNameSpace(string $name, ?array $labelNames = [],string $namespace=""): GaugeInterface
+    {
+        if (empty($namespace))
+        {
+            $namespace=$this->config->get("metric.metric.{$this->name}.namespace");
+        }
+
+        return new Gauge(
+            $this->registry,
+            $namespace,
+            $name,
+            'gauge ' . str_replace('_', ' ', $name),
+            $labelNames
+        );
+    }
+
+    /**
+     * @throws MetricsRegistrationException
+     */
+    public function makeHistogramWithNameSpace(string $name, ?array $labelNames = [],string $namespace=""): HistogramInterface
+    {
+        if (empty($namespace))
+        {
+            $namespace=$this->config->get("metric.metric.{$this->name}.namespace");
+        }
+
+        return new Histogram(
+            $this->registry,
+            $namespace,
+            $name,
+            'measure ' . str_replace('_', ' ', $name),
+            $labelNames
+        );
+    }
+
+
     /**
      * @throws GuzzleException
      */
@@ -174,9 +233,17 @@ class MetricFactory implements MetricFactoryInterface
         CoordinatorManager::until(Coord::WORKER_EXIT)->yield(); // Yield forever
     }
 
+    /**
+     * Date 07/04/2024 9:16 am
+     * @return string
+     * @comment : 按照主机划分
+     * @version 1.0.0
+     * @author Bain <Bain2018@gmail.com>
+     */
     private function getNamespace(): string
     {
-        $name = $this->config->get("metric.metric.{$this->name}.namespace");
+//        $name = $this->config->get("metric.metric.{$this->name}.namespace");
+        $name = $this->config->get("app_name");
         return preg_replace('#[^a-zA-Z0-9:_]#', '_', StrCache::snake($name));
     }
 

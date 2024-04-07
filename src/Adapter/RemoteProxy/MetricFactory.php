@@ -44,6 +44,31 @@ class MetricFactory implements MetricFactoryInterface
         );
     }
 
+    public function makeCounterWithNameSpace(string $name, ?array $labelNames = [],string $namespace=""): CounterInterface
+    {
+        return new Counter(
+            $name,
+            $labelNames
+        );
+    }
+
+    public function makeGaugeWithNameSpace(string $name, ?array $labelNames = [],string $namespace=""): GaugeInterface
+    {
+        return new Gauge(
+            $name,
+            $labelNames
+        );
+    }
+
+    public function makeHistogramWithNameSpace(string $name, ?array $labelNames = [],string $namespace=""): HistogramInterface
+    {
+        return new Histogram(
+            $name,
+            $labelNames
+        );
+    }
+
+
     public function handle(): void
     {
         throw new RuntimeException('RemoteProxy adapter cannot handle metrics reporting/serving directly');

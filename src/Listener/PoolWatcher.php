@@ -53,23 +53,18 @@ abstract class PoolWatcher
 
     public function watch(Pool $pool, string $poolName, int $workerId)
     {
-        $connectionsInUseGauge = $this
-            ->container
-            ->get(MetricFactoryInterface::class)
-            ->makeGauge($this->getPrefix() . '_connections_in_use', ['pool', 'worker'])
-            ->with($poolName, (string) $workerId);
-        $connectionsInWaitingGauge = $this
-            ->container
-            ->get(MetricFactoryInterface::class)
-            ->makeGauge($this->getPrefix() . '_connections_in_waiting', ['pool', 'worker'])
-            ->with($poolName, (string) $workerId);
-        $maxConnectionsGauge = $this
-            ->container
-            ->get(MetricFactoryInterface::class)
-            ->makeGauge($this->getPrefix() . '_max_connections', ['pool', 'worker'])
-            ->with($poolName, (string) $workerId);
-
         $config = $this->container->get(ConfigInterface::class);
+        $server = $config->get('app_name', 'wechat');
+
+        $connectionsInUseGauge = $this->container->get(MetricFactoryInterface::class)
+            ->makeGaugeWithNameSpace($this->getPrefix() . '_connections_in_use', ['pool', 'worker','server'],)->with($poolName, (string) $workerId,$server);
+
+        $connectionsInWaitingGauge = $this->container->get(MetricFactoryInterface::class)
+            ->makeGaugeWithNameSpace($this->getPrefix() . '_connections_in_waiting', ['pool', 'worker','server'],)->with($poolName, (string) $workerId,$server);
+
+        $maxConnectionsGauge = $this->container->get(MetricFactoryInterface::class)
+            ->makeGaugeWithNameSpace($this->getPrefix() . '_max_connections', ['pool', 'worker','server'],)->with($poolName, (string) $workerId,$server);
+
         $timerInterval = $config->get('metric.default_metric_interval', 5);
         $timerId = $this->timer->tick($timerInterval, function () use (
             $connectionsInUseGauge,
